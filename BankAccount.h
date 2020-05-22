@@ -17,6 +17,7 @@ private:
 
 public:
     BankAccount(int account, string password, int initSum);
+    //TODO implement these functions
     void setAccountNum(int num);
     void setPassword(string password);
     void transaction(int sum,string action);

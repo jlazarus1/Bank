@@ -16,11 +16,11 @@ public:
     void openAccount(Bank* bank,int ATMId,  int accountNum, string password, int initSum);
     //TODO implement all these
     //TODO add mutexes to these
-    void deposit(int accountNum, string password, int amount);
-    void withdraw(int accountNum, string password, int amount);
-    void viewBalance(int accountNum, string password);
-    void closeAccount(int accountNum, string password);
-    void transferToAccount(int accountNum, string password, int targetAccount, int amount);
+    void deposit(Bank* bank, int ATMId, int accountNum, string password, int amount);
+    void withdraw(Bank* bank, int ATMId, int accountNum, string password, int amount);
+    void viewBalance(Bank* bank, int ATMId,int accountNum, string password);
+    void closeAccount(Bank* bank, int ATMId,int accountNum, string password);
+    void transferToAccount(Bank* bank, int ATMId, int accountNum, string password, int targetAccount, int amount);
     int getATMId() const;
 };
 
