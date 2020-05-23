@@ -12,7 +12,9 @@ class Bank
 private:
     /* Here will be the instance stored. */
     static Bank* instance;
-    list<BankAccount> accounts;
+    map<int , BankAccount*> accounts;
+    BankAccount* bankAccount;
+    pthread_mutex_t account_lock_for_removing;
 
     /* Private constructor to prevent instancing. */
     Bank();
@@ -20,7 +22,10 @@ private:
 public:
     /* Static access method. */
     static Bank* getInstance();
-  void addItem(BankAccount account);
+    void addItem(BankAccount account);
+    void getCommission()
+    BankAccount* getAccount(int accountNum);
+    void removeAccount(int accountNum)
 };
 
 #endif //BANK_BANK_H

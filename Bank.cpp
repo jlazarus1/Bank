@@ -17,7 +17,15 @@ Bank* Bank::getInstance()
 }
 
 void Bank::addItem(BankAccount account) {
-    this->accounts.push_front(account);
+    if (!(this->accounts.count(account.getAccountNum())))
+    {
+        this->accounts.insert(account.getAccountNum(), account);
+    }
+    else
+    {
+        //TODO implement error massage for existing account number
+    }
+
 
 
 }
