@@ -17,7 +17,19 @@ Bank* Bank::getInstance()
 }
 
 void Bank::addItem(BankAccount account) {
-    this->accounts.push_front(account);
+    accNum = account.getAccountNum();
+    if (!(this->accounts.count(accNum)))
+    {
+        this->accounts.insert(accNum, account);
+        pthread_mutex_t lock;
+        tmp = pthread_mutex_init(&lock, nullptr); //return 0 upon success
+        this->locks.insert(accNum, &lock)
+    }
+    else
+    {
+        //TODO implement error massage for existing account number
+    }
+
 
 
 }
