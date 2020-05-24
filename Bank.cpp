@@ -2,6 +2,7 @@
 // Created by josh on 22/05/2020.
 //
 
+#include <unistd.h>
 #include "Bank.h"
 
 Bank* Bank::instance = 0;
@@ -16,10 +17,11 @@ Bank* Bank::getInstance()
     return instance;
 }
 
-void Bank::addItem(BankAccount account) {
-    tmp = pthread_mutex_lock(&this->enterLock));
+void Bank::addItem(BankAccount* account) {
 
-    accNum = account.getAccountNum();
+    int tmp = pthread_mutex_lock(&this->enterLock);
+
+    int accNum = account->getAccountNum();
     if (!(this->accounts.count(accNum)))
     {
         this->accounts.insert({accNum, account});
@@ -35,14 +37,14 @@ void Bank::addItem(BankAccount account) {
 }
 
 Bank::Bank() {
-    tmp = pthread_mutex_init(&this->enterLock, nullptr);
+   int tmp = pthread_mutex_init(&this->enterLock, nullptr);
 }
 
 bool Bank::enterAccount(int accountNum) {
 
     auto itr_lock = this->locks.find(accountNum);
     if (itr_lock != this->locks.end()){
-        tmp = pthread_mutex_lock(&(itr_lock->second));
+        int tmp = pthread_mutex_lock(&(itr_lock->second));
         return true
     }
     else {
@@ -54,7 +56,7 @@ bool Bank::enterAccount(int accountNum) {
 void Bank::exitAccount(int accountNum) {
     auto itr_lock = this->locks.find(accountNum);
     if (itr_lock != this->locks.end()){
-        tmp = pthread_mutex_unlock(&(itr_lock->second));
+       int tmp = pthread_mutex_unlock(&(itr_lock->second));
     }
     else {
         // TODO implement error massage for account not exist (not suppose to happen)
@@ -62,19 +64,19 @@ void Bank::exitAccount(int accountNum) {
 }
 
 void Bank::deposit(int accountNum, string pass, int amount) {
-    tmp = pthread_mutex_lock(&this->enterLock));
-    tmp = pthread_mutex_unlock(&this->enterLock));
+    int tmp = pthread_mutex_lock(&this->enterLock));
+     tmp = pthread_mutex_unlock(&this->enterLock));
 
     if (!(this->enterAccount(accountNum))) {
         return;
     }
-    itr_acc = this->accounts.find(accountNum);
+    auto itr_acc = this->accounts.find(accountNum);
     if (itr_acc == this->accounts.end()){
         // TODO implement error massage for account not exist
         return;
     }
     else {
-        itr_acc->second.deposit(amount, pass);
+        itr_acc->second->deposit(amount, pass);
         sleep(1);
         this->exitAccount(accountNum);
         return;
@@ -83,7 +85,7 @@ void Bank::deposit(int accountNum, string pass, int amount) {
 
 
 void Bank::removeAccount(int accountNum) {
-    tmp = pthread_mutex_lock(&this->enterLock));
+    int tmp = pthread_mutex_lock(&this->enterLock));
 
     if (!(this->enterAccount(accountNum))) {
         tmp = pthread_mutex_unlock(&this->enterLock));
@@ -91,7 +93,7 @@ void Bank::removeAccount(int accountNum) {
     }
     else {
         this->exitAccount(accountNum);
-        itr_lock = this->locks(accountNum);
+        auto itr_lock = this->locks(accountNum);
         tmp = pthread_mutex_destroy(&itr_lock->second);
         this->locks.erase(accountNum);
         this->accounts.erase(accountNum);

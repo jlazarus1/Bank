@@ -6,6 +6,7 @@
 #define BANK_BANK_H
 #include "BankAccount.h"
 #include <list>
+#include<map>
 
 class Bank
 {
@@ -13,7 +14,7 @@ private:
     /* Here will be the instance stored. */
     static Bank* instance;
     map<int , BankAccount*> accounts;
-    map<int , pthread_mutex_t*> locks
+    map<int , pthread_mutex_t*> locks;
     BankAccount* bankAccount;
     pthread_mutex_t enterLock;
 
@@ -23,8 +24,8 @@ private:
 public:
     /* Static access method. */
     static Bank* getInstance();
-    void addItem(BankAccount account);
-    void getCommission()
+    void addItem(BankAccount* account);
+    void getCommission();
     bool enterAccount(int accountNum);  // in implementing lock the account
     void exitAccount(int accountNum);
     void deposit(int accountNum, string pass, int amount);

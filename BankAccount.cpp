@@ -2,6 +2,7 @@
 // Created by josh on 20/05/2020.
 //
 
+#include <cstring>
 #include "BankAccount.h"
 
 BankAccount::BankAccount(int account, string password, int initSum) {
@@ -22,10 +23,10 @@ void BankAccount::setBalance(int newBalance) {
 
 
 void BankAccount::deposit(int amount, string password) {
-    accPass = getPassword();
-    if (!(strcmp(accPass, password))){
-        currBal = this.getBalance();
-        this.setBalance(currBal + amount);
+    string accPass = getPassword();
+    if (!(strcmp(accPass.c_str(), password.c_str()))){
+        int currBal = this->getBalance();
+        this->setBalance(currBal + amount);
         //TODO add success massage to log
     }
     else{
@@ -35,9 +36,9 @@ void BankAccount::deposit(int amount, string password) {
 
 
 void BankAccount::withdraw(int amount, string password) {
-    accPass = getPassword();
-    if (!(strcmp(accPass, password))){
-        currBal = this->getBalance();
+    string accPass = getPassword();
+    if (!(strcmp(accPass.c_str(), password.c_str()))){
+        int currBal = this->getBalance();
         if (amount > currBal){
             //TODO implement error massage for low balance
         }
