@@ -31,7 +31,6 @@ void BankAccount::deposit(int amount, string password) {
     else{
         //TODO implement error massage for wrong password
     }
-    sleep(1);
 }
 
 
@@ -50,7 +49,6 @@ void BankAccount::withdraw(int amount, string password) {
     else{
         //TODO implement error massage for wrong password
     }
-    sleep(1);
 }
 
 
@@ -58,6 +56,9 @@ void BankAccount::transfer(string password, BankAccount target, int amount) {
 
     // waiting for answer from the HW forum
 
+}
 
-    sleep(1);
+void BankAccount::balanceCheck() {
+    int balance = this->getBalance();
+    //TODO add success massage to log
 }

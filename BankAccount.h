@@ -26,7 +26,7 @@ public:
     void deposit(int amount, string password);
     void withdraw(int amount, string password);
     void transfer(string password, BankAccount target, int amount);
-
+    void balanceCheck();
 };
 
 

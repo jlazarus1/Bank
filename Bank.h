@@ -15,6 +15,7 @@ private:
     map<int , BankAccount*> accounts;
     map<int , pthread_mutex_t*> locks
     BankAccount* bankAccount;
+    pthread_mutex_t enterLock;
 
     /* Private constructor to prevent instancing. */
     Bank();
@@ -24,7 +25,12 @@ public:
     static Bank* getInstance();
     void addItem(BankAccount account);
     void getCommission()
-    BankAccount* getAccount(int accountNum);  // in implementing lock the account
+    bool enterAccount(int accountNum);  // in implementing lock the account
+    void exitAccount(int accountNum);
+    void deposit(int accountNum, string pass, int amount);
+    void withdraw(int accountNum, string pass, int amount);
+    void balanceCheck(int accountNum, string pass);
+    void transfer(int accountNum, string pass, int targetAcc, int amount);
     void removeAccount(int accountNum); // in implementing delete the lock
 };
 
