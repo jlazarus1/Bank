@@ -4,162 +4,330 @@
 
 #include <unistd.h>
 #include "Bank.h"
+#include <iostream>
+#include <fstream>
+
 
 Bank* Bank::instance = 0;
 
-Bank* Bank::getInstance()
+Bank* Bank::getInstance(int numOfATMs)
 {
     if (instance == 0)
     {
-        instance = new Bank();
+        instance = new Bank(numOfATMs);
     }
 
     return instance;
 }
 
-void Bank::addItem(BankAccount* account) {
-
-    int tmp = pthread_mutex_lock(&this->enterLock);
+void Bank::addAccount(BankAccount* account,int atmId) {
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    lockBankWrite();
 
     int accNum = account->getAccountNum();
+    //account does not exist
     if (!(this->accounts.count(accNum)))
     {
+        sleep(1);
         this->accounts.insert({accNum, account});
-        pthread_mutex_t lock;
-        tmp = pthread_mutex_init(&lock, nullptr); //return 0 upon success
-        this->locks.insert({accNum, &lock})
     }
     else
     {
-        //TODO implement error massage for existing account number
+        sleep(1);
+       lockLog();
+       log<<"Error "<<atmId<<": your transaction failed - account with the same id exists\n";
+       unlockLog();
     }
-    tmp = pthread_mutex_unlock(&this->enterLock));
+   unlockBankWrite();
 }
 
-Bank::Bank() {
-   int tmp = pthread_mutex_init(&this->enterLock, nullptr);
+Bank::Bank(int numOfATMs) {
+  pthread_mutex_init(&this->writeLock, nullptr);
+  pthread_mutex_init(&this->readLock, nullptr);
+  pthread_mutex_init(&this->logLock, nullptr);
+  pthread_mutex_init(&this->atmsLock, nullptr);
+  bankReaders=0;
+  account0 = 0;
+  this->numOfATMs=numOfATMs;
 }
 
-bool Bank::enterAccount(int accountNum) {
 
-    auto itr_lock = this->locks.find(accountNum);
-    if (itr_lock != this->locks.end()){
-        int tmp = pthread_mutex_lock(&(itr_lock->second));
-        return true
-    }
-    else {
-        // TODO implement error massage for account not exist
-        return false
-    }
-}
 
-void Bank::exitAccount(int accountNum) {
-    auto itr_lock = this->locks.find(accountNum);
-    if (itr_lock != this->locks.end()){
-       int tmp = pthread_mutex_unlock(&(itr_lock->second));
-    }
-    else {
-        // TODO implement error massage for account not exist (not suppose to happen)
-    }
-}
 
-void Bank::deposit(int accountNum, string pass, int amount) {
-    int tmp = pthread_mutex_lock(&this->enterLock));
-     tmp = pthread_mutex_unlock(&this->enterLock));
 
-    if (!(this->enterAccount(accountNum))) {
+void Bank::deposit(int accountNum, string pass, int amount, int atmId) {
+    lockBankRead();
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    auto itr_acc = this->accounts.find(accountNum);
+    //no such account
+    if (itr_acc == this->accounts.end()){
+        sleep(1);
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" does not exist\n";
+        unlockLog();
+        unlockBankRead();
         return;
     }
+    else {
+        //check password, if wrong
+        if (!itr_acc->second->checkPassword(pass))
+        {
+            sleep(1);
+            lockLog();
+            log<<"Error "<<atmId<<": Your transaction failed - password for account id "<<accountNum<< " is incorrect\n";
+            unlockLog();
+            unlockBankRead();
+            return;
+        }
+        //if password correct, deposit
+        sleep(1);
+        itr_acc->second->deposit(amount);
+        //lock log for writing to log
+        lockLog();
+        log<<atmId<<": Account "<<accountNum<<" new balance is "<<itr_acc->second->getBalance()<<" after "<<amount<<"$ was deposited\n";
+        unlockLog();
+
+        unlockBankRead();
+        return;
+    }
+}
+
+
+void Bank::removeAccount(int accountNum,int atmId) {
+    lockBankWrite();
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    //account exists
+    if ((this->accounts.count(accountNum)))
+    {
+        sleep(1);
+        map<int,BankAccount*>::iterator it;
+        it= accounts.find(accountNum);
+        auto acc_it = accounts.find(accountNum);
+        BankAccount* acc = acc_it->second;
+        this->accounts.erase(it);
+        acc->~BankAccount();
+        delete(acc);
+        lockLog();
+        log<<atmId<<"account id "<<accountNum<<" was removed\n";
+        unlockLog();
+        unlockBankWrite();
+        return;
+    }
+    //account does not exist
+    else
+    {
+        sleep(1);
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" does not exist\n";
+        unlockLog();
+        unlockBankWrite();
+        return;
+    }
+
+}
+
+
+void Bank::withdraw(int accountNum, string pass, int amount,int atmId) {
+   lockBankRead();
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    map<int,BankAccount*>::iterator itr_acc;
+    //iterator to account in map
+    itr_acc = accounts.find(accountNum);
+    //account does not exist
+    if (itr_acc == this->accounts.end()){
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" does not exist\n";
+        unlockLog();
+        unlockBankRead();
+        return;
+    }
+    //account exists
+    else {
+
+        //wrong password
+        if (!itr_acc->second->checkPassword(pass))
+            {
+            lockLog();
+            log<<"Error "<<atmId<<": Your transaction failed - password for account id "<<accountNum<<" is incorrect\n";
+            unlockLog();
+            unlockBankRead();
+            return;
+            }
+        //correct password
+        else{
+            //return value from withdraw was false - the transaction failed due to not enough money
+          if (!itr_acc->second->withdraw(amount)){
+              lockLog();
+              log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" balance is lower than "<<amount<<"\n";
+              unlockLog();
+              unlockBankRead();
+              return;
+          }
+          else {
+              //all went well with transaction
+              lockLog();
+              log<<atmId<<": Account "<<atmId<<" new balance is "<<itr_acc->second->getBalance()<<" after "<<amount<<"$ was withdrew\n";
+              unlockLog();
+              unlockBankRead();
+              return;
+
+          }
+
+        }
+    }
+}
+
+
+void Bank::balanceCheck(int accountNum, string pass,int atmId) {
+    lockBankRead();
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
     auto itr_acc = this->accounts.find(accountNum);
     if (itr_acc == this->accounts.end()){
-        // TODO implement error massage for account not exist
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" does not exist\n";
+        unlockLog();
+        unlockBankRead();
         return;
     }
     else {
-        itr_acc->second->deposit(amount, pass);
         sleep(1);
-        this->exitAccount(accountNum);
-        return;
+        //lock account for reading
+        itr_acc->second->lockReadAccount();
+        int bal = itr_acc->second->getBalance();
+        //unlock after reading account
+        itr_acc->second->unlockReadAccount();
+       lockLog();
+       log<<atmId<<" Account "<<accountNum<<" balance is "<<bal<<"\n";
+       unlockLog();
+       unlockBankRead();
+       return;
     }
 }
 
 
-void Bank::removeAccount(int accountNum) {
-    int tmp = pthread_mutex_lock(&this->enterLock));
-
-    if (!(this->enterAccount(accountNum))) {
-        tmp = pthread_mutex_unlock(&this->enterLock));
-        return;
-    }
-    else {
-        this->exitAccount(accountNum);
-        auto itr_lock = this->locks(accountNum);
-        tmp = pthread_mutex_destroy(&itr_lock->second);
-        this->locks.erase(accountNum);
-        this->accounts.erase(accountNum);
-    }
-    tmp = pthread_mutex_unlock(&this->enterLock));
-}
-
-
-void Bank::withdraw(int accountNum, string pass, int amount) {
-    tmp = pthread_mutex_lock(&this->enterLock));
-    tmp = pthread_mutex_unlock(&this->enterLock));
-
-    if (!(this->enterAccount(accountNum))) {
-        return;
-    }
-    itr_acc = this->accounts.find(accountNum);
+void Bank::transfer(int accountNum, string pass, int targetAcc, int amount,int atmId) {
+    lockBankRead();
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    auto itr_acc = this->accounts.find(accountNum);
+    auto itr_target = this->accounts.find(targetAcc);
     if (itr_acc == this->accounts.end()){
-        // TODO implement error massage for account not exist
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<accountNum<<" does not exist\n";
+        unlockLog();
+        unlockBankRead();
+        return;
+    }
+    else if (itr_target==this->accounts.end()){
+        lockLog();
+        log<<"Error "<<atmId<<": Your transaction failed - account id "<<targetAcc<<" does not exist\n";
+        unlockLog();
+        unlockBankRead();
         return;
     }
     else {
-        itr_acc->second.withdraw(amount, pass);
-        sleep(1);
-        this->exitAccount(accountNum);
-        return;
+        //wrong password
+        if(!itr_acc->second->checkPassword(pass))
+        {
+            lockLog();
+            log<<"Error "<<atmId<<": Your transaction failed - password for account id "<<accountNum<<" is incorrect\n";
+            unlockLog();
+            unlockBankRead();
+            return;
+        }
+        else {
+            //all is good, transfer to target
+            itr_acc->second->transfer(itr_target->second,amount);
+            unlockBankRead();
+            return;
+        }
     }
 }
 
+void Bank::getCommission() {
+    ofstream log;
+    log.open("log.txt",fstream::out | fstream ::app);
+    lockBankRead();
+    double commPercent;
+    int commission;
+    for (auto i=accounts.begin(); i!=accounts.end();i++){
+        commPercent = (4-2) * ((double) random()/(double)RAND_MAX) + 2;
+        commission = i->second->commission(commPercent);
+        account0+=commission;
+        lockLog();
+        log<<"Bank: commissions of "<<commPercent<<"% were charged, the bank gained "<<commission<<"$ from account"<<i->second->getAccountNum()<<"\n";
+        unlockLog();
+    }
 
-void Bank::balanceCheck(int accountNum, string pass) {
-    tmp = pthread_mutex_lock(&this->enterLock));
-    tmp = pthread_mutex_unlock(&this->enterLock));
+}
 
-    if (!(this->enterAccount(accountNum))) {
-        return;
-    }
-    itr_acc = this->accounts.find(accountNum);
-    if (itr_acc == this->accounts.end()){
-        // TODO implement error massage for account not exist
-        return;
-    }
-    else {
-        itr_acc->second.balanceCheck();
-        sleep(1);
-        this->exitAccount(accountNum);
-        return;
-    }
+int Bank::getNumATMs() {
+    return numOfATMs;
+}
+
+void Bank::reduceATM() {
+    lockATMs();
+    numOfATMs--;
+    unlockATMs();
 }
 
 
-void Bank::transfer(int accountNum, string pass, int targetAcc, int amount) {
-    tmp = pthread_mutex_lock(&this->enterLock));
-    tmp = pthread_mutex_unlock(&this->enterLock));
+void Bank::printStatus() {
 
-    if (!(this->enterAccount(accountNum))) {
-        return;
+    lockBankRead();
+    printf("\033[2J\033[1;1H");
+    cout << "Current Bank Status\n";
+    for(auto & account : accounts){
+        account.second->print();
     }
-    itr_acc = this->accounts.find(accountNum);
-    if (itr_acc == this->accounts.end()){
-        // TODO implement error massage for account not exist
-        return;
+    cout<<"The Bank has "<<this->account0<<"$\n";
+
+
+    unlockBankRead();
+}
+
+
+void Bank::lockBankRead() {
+    pthread_mutex_lock(&readLock);
+    bankReaders++;
+    if(bankReaders==1){
+        pthread_mutex_lock(&writeLock);
     }
-    else {
-        itr_acc->second.transfer(pass, targetAcc, amount);
-        sleep(1);
-        this->exitAccount(accountNum);
-        return;
+    pthread_mutex_unlock(&readLock);
+}
+
+void Bank::unlockBankRead() {
+    pthread_mutex_lock(&readLock);
+    bankReaders--;
+    if(bankReaders==0){
+        pthread_mutex_unlock(&writeLock);
     }
+    pthread_mutex_unlock(&readLock);
+}
+
+void Bank::lockBankWrite() {
+    pthread_mutex_lock(&writeLock);
+}
+
+void Bank::unlockBankWrite() {
+    pthread_mutex_unlock(&writeLock);
+}
+
+void Bank::lockLog() {
+    pthread_mutex_lock(&logLock);
+}
+void Bank::unlockLog() {
+    pthread_mutex_unlock(&logLock);
+}
+
+void Bank::lockATMs() {
+    pthread_mutex_lock(&atmsLock);
+}
+void Bank::unlockATMs() {
+    pthread_mutex_unlock(&atmsLock);
 }

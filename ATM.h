@@ -13,9 +13,7 @@ private:
 
 public:
     explicit ATM(int ID);
-    void openAccount(Bank* bank,int ATMId,  int accountNum, string password, int initSum);
-    //TODO implement all these
-    //TODO add mutexes to these
+    void openAccount(Bank* bank, int ATMId,  int accountNum, string password, int initSum);
     void deposit(Bank* bank, int ATMId, int accountNum, string password, int amount);
     void withdraw(Bank* bank, int ATMId, int accountNum, string password, int amount);
     void viewBalance(Bank* bank, int ATMId,int accountNum, string password);

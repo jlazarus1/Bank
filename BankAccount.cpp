@@ -4,62 +4,128 @@
 
 #include <cstring>
 #include "BankAccount.h"
+#include <fstream>
+#include <math.h>
 
 BankAccount::BankAccount(int account, string password, int initSum) {
+    pthread_mutex_init(&accountReadLock,NULL);
+    pthread_mutex_init(&accountWriteLock,NULL);
     this->AccountNum = account;
     this->Password = password;
     this->Balance = initSum;
+    numOfReaders=0;
+
+}
+BankAccount::~BankAccount() {
+
+    pthread_mutex_destroy(&accountWriteLock);
+    pthread_mutex_destroy(&accountReadLock);
 }
 
-int BankAccount::getAccountNum() {return this->AccountNum}
+int BankAccount::getAccountNum() {return this->AccountNum;}
 
-int BankAccount::getBalance() {return this->Balance}
+int BankAccount::getBalance() {return this->Balance;}
 
-string BankAccount::getPassword() {return this->Password}
+string BankAccount::getPassword() {return this->Password;}
 
 void BankAccount::setBalance(int newBalance) {
     this->Balance = newBalance;
 }
 
 
-void BankAccount::deposit(int amount, string password) {
-    string accPass = getPassword();
-    if (!(strcmp(accPass.c_str(), password.c_str()))){
+void BankAccount::deposit(int amount) {
+    lockWriteAccount();
+
         int currBal = this->getBalance();
         this->setBalance(currBal + amount);
-        //TODO add success massage to log
+
+    unlockWriteAccount();
     }
-    else{
-        //TODO implement error massage for wrong password
-    }
-}
 
 
-void BankAccount::withdraw(int amount, string password) {
-    string accPass = getPassword();
-    if (!(strcmp(accPass.c_str(), password.c_str()))){
-        int currBal = this->getBalance();
-        if (amount > currBal){
-            //TODO implement error massage for low balance
-        }
-        else{
-            this.setBalance(currBal - amount);
-            //TODO add success massage to log
-        }
-    }
-    else{
-        //TODO implement error massage for wrong password
+
+bool BankAccount::withdraw(int amount) {
+lockWriteAccount();
+
+    int currBal = this->getBalance();
+    if (amount > currBal) {
+        unlockWriteAccount();
+        return false;
+    } else {
+        this->setBalance(currBal - amount);
+        unlockWriteAccount();
+        return true;
     }
 }
 
 
-void BankAccount::transfer(string password, BankAccount target, int amount) {
-
-    // waiting for answer from the HW forum
+bool BankAccount::transfer( BankAccount* target, int amount) {
+lockWriteAccount();
+target->lockWriteAccount();
+int currBal = getBalance();
+// not enough money to move to target
+if (amount>currBal){
+    unlockWriteAccount();
+    //unlock target write
+    target->unlockWriteAccount();
+    return false;
+}
+else {
+    int targetBal = target->getBalance();
+    target->setBalance(targetBal+amount);
+    setBalance(currBal-amount);
+    unlockWriteAccount();
+    target->unlockWriteAccount();
+    return true;
 
 }
 
-void BankAccount::balanceCheck() {
-    int balance = this->getBalance();
-    //TODO add success massage to log
+
+}
+
+
+
+bool BankAccount::checkPassword(string pass) {
+    return Password == pass;
+
+}
+void BankAccount::lockReadAccount() {
+    pthread_mutex_lock(&accountReadLock);
+    numOfReaders++;
+    if(numOfReaders==1){
+        pthread_mutex_lock(&accountWriteLock);
+    }
+    pthread_mutex_unlock(&accountReadLock);
+}
+
+void BankAccount::unlockReadAccount() {
+    pthread_mutex_lock(&accountReadLock);
+    numOfReaders--;
+    if(numOfReaders==0){
+        pthread_mutex_unlock(&accountWriteLock);
+    }
+    pthread_mutex_unlock(&accountReadLock);
+}
+
+void BankAccount::lockWriteAccount() {
+    pthread_mutex_lock(&accountWriteLock);
+}
+void BankAccount::unlockWriteAccount() {
+    pthread_mutex_unlock(&accountWriteLock);
+}
+
+int BankAccount::commission(double percent) {
+    lockWriteAccount();
+    int commission = round((percent * (double)getBalance())/ 100.0);
+    int bal = getBalance();
+    setBalance(bal-commission);
+    unlockWriteAccount();
+    return commission;
+}
+
+void BankAccount::print(){
+    lockReadAccount();
+    cout<<"Account "<<getAccountNum()<<": Balance - "<<getBalance()<<"$ , Account password - "<<getPassword()<<"\n";
+    unlockReadAccount();
+    return;
 }

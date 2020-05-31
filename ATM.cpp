@@ -4,34 +4,54 @@
 
 #include <algorithm>
 #include "ATM.h"
-#include "BankAccount.h"
+
 #include <iostream>
 #include <fstream>
+#include <utility>
 
 ATM::ATM(int ID) {
     ATMId = ID;
 }
 int ATM::getATMId() const {return ATMId;}
 
-void ATM::openAccount(Bank* bank, int ATMId, int accountNum, string password, int initSum) {
-    //open the log.txt file
-    ofstream log("log.txt");
-    list<BankAccount>::iterator it;
-    BankAccount newAccount(accountNum,password,initSum);
- //   it = find(accounts.begin(),accounts.end(),newAccount);
-//    if (it == accounts.end())
-//    {
-//        log<<"Error "<<ATMId <<" : Your transaction failed – account with the same id exists\n";
-//    }
-//    else {
-//TODO find if the account exists or not.
-// TODO add mutex to guard adding item to the bank.
-     bank->addItem(newAccount);
-     cout<<ATMId<<"\n";
+void ATM::openAccount(Bank* bank, int id, int accountNum, string password, int initSum) {
 
-//    }
-
+    auto* newAccount = new BankAccount(accountNum,std::move(password),initSum);
+    bank->addAccount(newAccount,id);
 
 }
+
+void ATM::deposit(Bank* bank, int id, int accountNum, string password, int amount){
+
+    bank->deposit(accountNum,password,amount,id);
+
+    }
+
+    void ATM::withdraw(Bank *bank, int ATMId, int accountNum, string password, int amount) {
+
+    bank->withdraw(accountNum,password,amount,ATMId);
+
+    }
+
+
+
+    void ATM::closeAccount(Bank *bank, int ATMId, int accountNum, string password) {
+
+    bank->removeAccount(accountNum,ATMId);
+
+}
+
+void ATM::viewBalance(Bank *bank, int ATMId, int accountNum, string password) {
+    bank->balanceCheck(accountNum,password,ATMId);
+}
+
+void ATM::transferToAccount(Bank *bank, int ATMId, int accountNum, string password, int targetAccount, int amount) {
+
+    bank->transfer(accountNum,password,targetAccount,amount,ATMId);
+}
+
+
+
+
 
 

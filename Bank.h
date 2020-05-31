@@ -8,31 +8,49 @@
 #include <list>
 #include<map>
 
+
 class Bank
 {
 private:
     /* Here will be the instance stored. */
     static Bank* instance;
     map<int , BankAccount*> accounts;
-    map<int , pthread_mutex_t*> locks;
-    BankAccount* bankAccount;
-    pthread_mutex_t enterLock;
+    int account0;
+    int bankReaders;
+    int numOfATMs;
+    pthread_mutex_t  logLock;
+    pthread_mutex_t  readLock;
+    pthread_mutex_t writeLock;
+    pthread_mutex_t atmsLock;
+
+
+
+
 
     /* Private constructor to prevent instancing. */
-    Bank();
+    Bank(int numOfATMS);
 
 public:
     /* Static access method. */
-    static Bank* getInstance();
-    void addItem(BankAccount* account);
+    static Bank* getInstance(int numOfATMs);
+    void addAccount(BankAccount* account,int atmId);
     void getCommission();
-    bool enterAccount(int accountNum);  // in implementing lock the account
-    void exitAccount(int accountNum);
-    void deposit(int accountNum, string pass, int amount);
-    void withdraw(int accountNum, string pass, int amount);
-    void balanceCheck(int accountNum, string pass);
-    void transfer(int accountNum, string pass, int targetAcc, int amount);
-    void removeAccount(int accountNum); // in implementing delete the lock
+    void deposit(int accountNum, string pass, int amount,int atmId);
+    void withdraw(int accountNum, string pass, int amount,int atmId);
+    void balanceCheck(int accountNum, string pass,int atmId);
+    void transfer(int accountNum, string pass, int targetAcc, int amount,int atmId);
+    void removeAccount(int accountNum,int atmId); // in implementing delete the lock
+    void lockLog();
+    void unlockLog();
+    void lockBankRead();
+    void unlockBankRead();
+    void lockBankWrite();
+    void unlockBankWrite();
+    void printStatus();
+    void lockATMs();
+    void unlockATMs();
+    void reduceATM();
+    int getNumATMs();
 };
 
 #endif //BANK_BANK_H
