@@ -42,6 +42,8 @@ void * runATM(void * threadarg){
     //iterate over lines in the file
     while (getline(fileToRun,line))
     {
+        //sleep for 100 milliseconds
+        usleep(1000);
         // get the specific line
        istringstream iss(line);
        //create a vector of items from the line
@@ -99,12 +101,14 @@ void * runATM(void * threadarg){
        }
 
     }
+    //remove atm from working atms list.
     bank->reduceATM();
     pthread_exit(NULL);
 
 
 }
 
+// thread function to run bank to get commission every 3 seconds
 void* runBank(void* threadArgs){
     struct bank_data * data;
     data  = (struct bank_data *) threadArgs;
@@ -116,6 +120,7 @@ while (bank->getNumATMs()>0){
 pthread_exit(NULL);
 }
 
+// thread function to print to screen the status of the bank and the accounts
 void* printBank(void* printArgs){
     struct bank_data * data;
     data  = (struct bank_data *) printArgs;
@@ -175,7 +180,15 @@ int main(int argc, char *argv[]) {
     }
     pthread_join(*BankPrint_p,NULL);
     pthread_join(*BankThread_p,NULL);
-
+    for (int i=0;i<N;i++){
+        delete thread_data_array[i].atmInst;
+    }
+    delete[] thread_data_array;
+    delete BankThread_p;
+    delete BankPrint_p;
+    delete[] threads;
+    mainBank->deleteAccounts();
+    mainBank->~Bank();
 
 
     log.close();

@@ -33,7 +33,7 @@ private:
 public:
     /* Static access method. */
     static Bank* getInstance(int numOfATMs);
-    void addAccount(BankAccount* account,int atmId);
+    void addAccount(int accountNum, string password, int initSum,int atmId);
     void getCommission();
     void deposit(int accountNum, string pass, int amount,int atmId);
     void withdraw(int accountNum, string pass, int amount,int atmId);
@@ -51,6 +51,8 @@ public:
     void unlockATMs();
     void reduceATM();
     int getNumATMs();
+    void deleteAccounts();
+    ~Bank();
 };
 
 #endif //BANK_BANK_H

@@ -20,24 +20,27 @@ Bank* Bank::getInstance(int numOfATMs)
     return instance;
 }
 
-void Bank::addAccount(BankAccount* account,int atmId) {
+void Bank::addAccount(int accountNum, string password, int initSum,int atmId) {
+    lockBankWrite();
     ofstream log;
     log.open("log.txt",fstream::out | fstream ::app);
-    lockBankWrite();
+    BankAccount* acc = new BankAccount(accountNum,password,initSum);
 
-    int accNum = account->getAccountNum();
+    int accNum = acc->getAccountNum();
     //account does not exist
     if (!(this->accounts.count(accNum)))
     {
         sleep(1);
         lockLog();
-        log<<atmId<<": New account id is "<< account->getAccountNum()<<" with password "<<account->getPassword()<<" and initial balance "<<account->getBalance()<<"\n";
+        log<<atmId<<": New account id is "<< acc->getAccountNum()<<" with password "<<acc->getPassword()<<" and initial balance "<<acc->getBalance()<<"\n";
         unlockLog();
-        this->accounts.insert({accNum, account});
+        this->accounts.insert({accNum, acc});
     }
     else
     {
+        //account is in the bank already
         sleep(1);
+        delete acc;
        lockLog();
        log<<"Error "<<atmId<<": your transaction failed - account with the same id exists\n";
        unlockLog();
@@ -338,3 +341,17 @@ void Bank::lockATMs() {
 void Bank::unlockATMs() {
     pthread_mutex_unlock(&atmsLock);
 }
+void Bank::deleteAccounts() {
+    map<int,BankAccount*>::iterator it;
+
+    for (it=accounts.begin();it!=accounts.end();it++)
+    {
+        delete it->second;
+
+    }
+    accounts.clear();
+
+
+}
+
+Bank::~Bank()= default;

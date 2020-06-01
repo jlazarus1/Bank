@@ -16,8 +16,7 @@ int ATM::getATMId() const {return ATMId;}
 
 void ATM::openAccount(Bank* bank, int id, int accountNum, string password, int initSum) {
 
-    auto* newAccount = new BankAccount(accountNum,std::move(password),initSum);
-    bank->addAccount(newAccount,id);
+    bank->addAccount(accountNum,password,initSum,id);
 
 }
 
