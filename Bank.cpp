@@ -30,6 +30,9 @@ void Bank::addAccount(BankAccount* account,int atmId) {
     if (!(this->accounts.count(accNum)))
     {
         sleep(1);
+        lockLog();
+        log<<atmId<<": New account id is "<< account->getAccountNum()<<" with password "<<account->getPassword()<<" and initial balance "<<account->getBalance()<<"\n";
+        unlockLog();
         this->accounts.insert({accNum, account});
     }
     else
@@ -111,7 +114,7 @@ void Bank::removeAccount(int accountNum,int atmId) {
         acc->~BankAccount();
         delete(acc);
         lockLog();
-        log<<atmId<<"account id "<<accountNum<<" was removed\n";
+        log<<atmId<<": account id "<<accountNum<<" was removed\n";
         unlockLog();
         unlockBankWrite();
         return;
@@ -243,6 +246,9 @@ void Bank::transfer(int accountNum, string pass, int targetAcc, int amount,int a
         else {
             //all is good, transfer to target
             itr_acc->second->transfer(itr_target->second,amount);
+            lockLog();
+            log<<atmId<<": Transfer "<<amount<<" from account "<<accountNum<<" to account "<<targetAcc<<" new account balance is "<<itr_acc->second->getBalance()<<" new target account balance is "<<itr_target->second->getBalance()<<"\n";
+            unlockLog();
             unlockBankRead();
             return;
         }
@@ -250,9 +256,9 @@ void Bank::transfer(int accountNum, string pass, int targetAcc, int amount,int a
 }
 
 void Bank::getCommission() {
+    lockBankRead();
     ofstream log;
     log.open("log.txt",fstream::out | fstream ::app);
-    lockBankRead();
     double commPercent;
     int commission;
     for (auto i=accounts.begin(); i!=accounts.end();i++){
@@ -263,6 +269,7 @@ void Bank::getCommission() {
         log<<"Bank: commissions of "<<commPercent<<"% were charged, the bank gained "<<commission<<"$ from account"<<i->second->getAccountNum()<<"\n";
         unlockLog();
     }
+    unlockBankRead();
 
 }
 

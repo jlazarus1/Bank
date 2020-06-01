@@ -127,5 +127,5 @@ void BankAccount::print(){
     lockReadAccount();
     cout<<"Account "<<getAccountNum()<<": Balance - "<<getBalance()<<"$ , Account password - "<<getPassword()<<"\n";
     unlockReadAccount();
-    return;
+
 }
