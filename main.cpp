@@ -19,16 +19,14 @@ using namespace std;
 
 //struct to pass to thread
 struct thread_data{
-    int thread_id;
     ATM* atmInst;
     char * fileToRun;
     Bank* bank;
-
-};
+} DataThread;
 
 struct bank_data{
     Bank* bank;
-};
+}BankThread;
 
 
 // function to run an atm via a thread
@@ -139,26 +137,27 @@ void* printBank(void* printArgs){
 
 
 int main(int argc, char *argv[]) {
-    Bank* mainBank = Bank::getInstance(argc-2);
+    const int N =  atoi(argv[1]);
+    Bank* mainBank = Bank::getInstance(N);
     pthread_t* BankThread_p = new pthread_t;
     pthread_t* BankPrint_p = new pthread_t;
-    struct thread_data thread_data_array[argc -2];
+
+    struct thread_data* thread_data_array = new thread_data[N];
     struct bank_data bank_data_thread[1];
     bank_data_thread[0].bank=mainBank;
-    pthread_t threads[argc - 2];
+    pthread_t* threads = new pthread_t[N];
     int t,rc;
     pthread_create(BankPrint_p,NULL,printBank,(void*)&bank_data_thread[0]);
     pthread_create(BankThread_p,NULL,runBank,(void*)&bank_data_thread[0]);
     ofstream log("log.txt");
     for (t= 0 ; t <argc-2;t++){
-        thread_data_array[t].thread_id=t;
         //create new ATM
         ATM* atmInst = new ATM(t);
         thread_data_array[t].atmInst = atmInst;
         thread_data_array[t].fileToRun=argv[t+2];
         thread_data_array[t].bank=mainBank;
         //create thread with the struct as argument
-        rc = pthread_create(&threads[t],NULL,runATM, (void *)&thread_data_array[t]);
+        rc = pthread_create(&threads[t],NULL,runATM, (void*)&thread_data_array[t]);
         if(rc){
             log<<"ERROR; return code from pthread_create() is "<<rc<<"\n";
             exit(-1);
@@ -182,4 +181,3 @@ int main(int argc, char *argv[]) {
     log.close();
     return 0;
 }
-;
